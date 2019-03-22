@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Run Makefile
+make || exit
+
+printf 'Prolog Compiler with Flex & Bison by Oliver Rudzinski\n\n'
+# Run generated object file
+./prolog
+
