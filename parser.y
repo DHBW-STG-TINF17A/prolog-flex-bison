@@ -4,14 +4,13 @@
   #include <string.h>
 	#include "parser.tab.h"
 
-	int main(int argc, char **argv);
+	int main(void);
   void print_l(struct symbol *p);
   void yyerror(char*);
 	int yylex();
-	FILE *yyin;
 
   struct symbol {
-    char *name;
+    char * name;
     struct symbol *next;
   };
 
@@ -59,19 +58,19 @@
   char *ch;
 }
 
-%token <ch> atom variable numeral dot def com op cp ob cb vert
-%type <smbl> FACT RULE TERM TERM_L LIST LITERAL LITERAL_L
+%token <ch> EOL atom variable numeral dot def com op cp ob cb vert
+%type <smbl> FACT RULE TERM TERM_L LIST LITERAL LITERAL_L FUNCTION
 
 %start S_L
 
 %%
 
-S_L: 	S S_L	{ ; }
-	| 	S			{ ; }
+S_L: S S_L	{ ; }
+	| S	{ ; }
 	;
 
-S: 		FACT { print_l($1); }
-	|		RULE { print_l($1); }
+S: FACT EOL { print_l($1); }
+	|	RULE EOL { print_l($1); }
 	;
 
 FACT:	LITERAL dot { $$ = $1; }
@@ -80,32 +79,37 @@ FACT:	LITERAL dot { $$ = $1; }
 RULE:	LITERAL def LITERAL_L dot { $$ = merge_list($1, $3); }
 	;
 
-LITERAL: 	atom op TERM_L cp { $$ = $3; }
-	|				variable { $$ = create_new_list($1); }
+LITERAL: atom op TERM_L cp { $$ = $3; }
+	| atom { $$ = NULL; }
 	;
 
-LITERAL_L:	LITERAL com LITERAL_L { $$ = merge_list($1, $3); }
-	|					LITERAL { $$ = $1; }
+LITERAL_L: LITERAL com LITERAL_L { $$ = merge_list($1, $3); }
+	| LITERAL { $$ = $1; }
 	;
 
-TERM_L:	TERM_L com TERM { $$ = merge_list($1, $3); }
-	|			TERM { $$ = $1; }
+TERM_L: TERM_L com TERM { $$ = merge_list($1, $3); }
+	| TERM { $$ = $1; }
 	;
 
 TERM: LIST { $$ = $1; }
-  |   atom { $$ = NULL; }
-  |   numeral { $$ = NULL; }
+  | FUNCTION { $$ = $1; }
+  | atom { $$ = NULL; }
+  | numeral { $$ = NULL; }
   ;
 
 LIST:	ob TERM_L vert LIST cb { $$ = merge_list($2, $4); }
-	|		ob TERM_L cb { $$ = $2 }
-	|		ob cb { $$ = NULL; }
-	|		variable { $$ = create_new_list($1); }
-  ;	
+	| ob TERM_L cb { $$ = $2; }
+	|	ob cb { $$ = NULL; }
+	|	variable { $$ = create_new_list($1); }
+  ;
+
+FUNCTION: atom op TERM_L cp { $$ = $3; }
+  ;
+
 
 %%
 
-int main(int argc, char *argv[]) {	
+int main(void) {	
   yyparse(); return 0;
 }
 

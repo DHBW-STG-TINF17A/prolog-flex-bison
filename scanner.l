@@ -1,5 +1,8 @@
 %{
+#define YYSTYPE char *
+
 #include "parser.tab.h"
+#include <stdio.h>
 %}
 
 %option noyywrap
@@ -16,8 +19,10 @@ numeral           {digit}+(\.{digit}+)?
 %%
 
 {atom}            { return atom; }
-{variable}        { return variable; }
+{variable}        { yylval = yytext; return variable; }
 {numeral}         { return numeral; }
+
+[\t ]+            /* ignore whitespace */ ;
 
 \.                { return dot; }
 :-                { return def; }
@@ -29,7 +34,6 @@ numeral           {digit}+(\.{digit}+)?
 \]                { return cb; }
 \|                { return vert; }
 
+
+\n                { return EOL; } 
 .                 { printf("Cannot interpret '%s'\n", yytext); }
-
-
-%%
