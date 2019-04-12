@@ -59,7 +59,9 @@
 }
 
 %token <ch> EOL atom variable numeral dot def com op cp ob cb vert
-%type <smbl> FACT RULE TERM TERM_L LIST LITERAL LITERAL_L FUNCTION
+%type <smbl> FACT RULE TERM TERM_L OPERAND COMP ARITH LIST LITERAL LITERAL_L FUNCTION
+
+%left lt lte st ste eq eqeq neq neqeq plus minus times divby
 
 %start S_L
 
@@ -80,6 +82,8 @@ RULE:	LITERAL def LITERAL_L dot { $$ = merge_list($1, $3); }
 	;
 
 LITERAL: atom op TERM_L cp { $$ = $3; }
+  | ARITH { ; }
+  | COMP { ; }
 	| atom { $$ = NULL; }
 	;
 
@@ -93,8 +97,35 @@ TERM_L: TERM_L com TERM { $$ = merge_list($1, $3); }
 
 TERM: LIST { $$ = $1; }
   | FUNCTION { $$ = $1; }
+  | ARITH { $$ = $1; }
+  | COMP { $$ = $1; } 
   | atom { $$ = NULL; }
   | numeral { $$ = NULL; }
+  ;
+
+ARITH: op ARITH cp
+  | OPERAND plus OPERAND
+  | OPERAND minus OPERAND
+  | OPERAND times OPERAND
+  | OPERAND divby OPERAND
+  ;
+
+COMP: op COMP cp
+  | OPERAND lt OPERAND
+  | OPERAND lte OPERAND
+  | OPERAND st OPERAND
+  | OPERAND ste OPERAND
+  | OPERAND eq OPERAND
+  | OPERAND eqeq OPERAND
+  | OPERAND neq OPERAND
+  | OPERAND neqeq OPERAND
+  ; 
+
+OPERAND: ARITH
+  | COMP
+  | variable
+  | numeral
+  | atom
   ;
 
 LIST:	ob TERM_L vert LIST cb { $$ = merge_list($2, $4); }
@@ -107,6 +138,7 @@ FUNCTION: atom op TERM_L cp { $$ = $3; }
   ;
 
 
+
 %%
 
 int main(void) {	
@@ -116,8 +148,11 @@ int main(void) {
 void print_l(struct symbol *p) {
     printf("Recognized: ");
     while (p != NULL) {
-      printf("%s, ", p->name);
+      printf("%s", p->name);
       p = p->next;
+      if (p != NULL) {
+        printf(", ");
+      }
     }
     printf("\n");
   }

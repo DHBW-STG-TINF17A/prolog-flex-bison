@@ -34,6 +34,21 @@ numeral           {digit}+(\.{digit}+)?
 \]                { return cb; }
 \|                { return vert; }
 
+\>                { return lt; }
+\>=               { return lte; }
+\<                { return st; }
+\=<               { return ste; }
+
+\=                { return eq; }
+\==               { return eqeq; }
+\\=               { return neq; }
+\\==              { return neqeq; }
+
+\+                { return plus; }
+\-                { return minus; }
+\*                { return times; }
+\/                { return divby; }
+
 
 \n                { return EOL; } 
 .                 { printf("Cannot interpret '%s'\n", yytext); }
