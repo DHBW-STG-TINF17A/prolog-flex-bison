@@ -5,74 +5,100 @@
 	#include "parser.tab.h"
 
 	int main(void);
-  void print_l(struct symbol *p);
+  void print_l(struct var_symbol *p);
   void yyerror(char*);
 	int yylex();
 
-  struct symbol {
-    char * name;
-    struct symbol *next;
+  struct clause_group {
+    char *name;
+    int term_count;
+    struct clause_group *next;
   };
 
-  struct symbol *create_new_list(char *str) {
-    struct symbol *new = malloc(sizeof(struct symbol));
+  struct clause_symbol {
+    struct literal_symbol *literal_list;
+    struct clause_symbol *next;
+  };
+
+  struct literal_symbol {
+    char *name;
+    struct var_symbol *var_list;
+    struct literal_symbol *next;
+  };
+
+  struct var_symbol {
+    char *name;
+    struct var_symbol *next;
+  };
+
+  struct var_symbol *create_new_list(char *str) {
+    struct var_symbol *new = calloc(1, sizeof(struct var_symbol));
     new->next = NULL;
-    new->name = malloc((strlen(str) + 1) * sizeof(char));
-    strcpy(new->name, str);
+    new->name = strdup(str);
     return new;
   }
 
-  struct symbol *merge_list(struct symbol *p1, struct symbol *p2) {
-    if (p1 == NULL) { return p2; }
-    if (p2 == NULL) { return p1; }
+  struct var_symbol *merge_list(struct var_symbol *left, struct var_symbol *right) {
+    if (left == NULL) { return right; }
+    if (right == NULL) { return left; }
 
-    struct symbol *helper;
-    char found;
-
-    while (p2 != NULL) {
-      helper = p1;
-      found = 0;
-
-      while (helper != NULL) {
-        if (strcmp(p2->name, helper->name) == 0) {
-          found = 1;
-        }
-        helper = helper->next;
-      }
-      helper = p2->next;
-
-      if (!found) {
-        p2->next = p1;
-        p1 = p2;
-      }
-
-      p2 = helper;
+    struct var_symbol *left_end = left;
+    while (left_end->next != NULL) {
+      left_end = left_end->next;
     }
-    return p1;
+
+    struct var_symbol *right_element = right;
+    while (right_element != NULL) {
+      char duplicate = 0;
+
+      struct var_symbol *left_element = left;
+      while (left_element != NULL) {
+        if (strcmp(left_element->name, right_element->name) == 0) {
+          duplicate = 1;
+          break;
+        }
+
+        left_element = left_element->next;
+      }
+
+      if (duplicate == 0) {
+        left_end->next = right_element;
+        left_end = right_element;
+      }
+
+      right_element = right_element->next;
+    }
+
+    return left;
   }
 
 %}
 
 %union {
-  struct symbol *smbl;
+  struct var_symbol *smbl;
   char *ch;
 }
 
-%token <ch> EOL atom variable numeral dot def com op cp ob cb vert
+%token <ch> atom variable numeral dot def com op cp ob cb vert is
 %type <smbl> FACT RULE TERM TERM_L OPERAND COMP ARITH LIST LITERAL LITERAL_L FUNCTION
 
 %left lt lte st ste eq eqeq neq neqeq plus minus times divby
 
 %start S_L
 
+%debug
+%initial-action {
+  yydebug = 0;
+}
+
 %%
 
-S_L: S S_L	{ ; }
+S_L: S_L S	{ ; }
 	| S	{ ; }
 	;
 
-S: FACT EOL { print_l($1); }
-	|	RULE EOL { print_l($1); }
+S: FACT { print_l($1); }
+	|	RULE { print_l($1); }
 	;
 
 FACT:	LITERAL dot { $$ = $1; }
@@ -82,9 +108,10 @@ RULE:	LITERAL def LITERAL_L dot { $$ = merge_list($1, $3); }
 	;
 
 LITERAL: atom op TERM_L cp { $$ = $3; }
-  | ARITH { ; }
-  | COMP { ; }
+  | ARITH { $$ = $1; }
+  | COMP { $$ =$1; }
 	| atom { $$ = NULL; }
+  | variable is OPERAND { $$ = merge_list(create_new_list($1), $3); }
 	;
 
 LITERAL_L: LITERAL com LITERAL_L { $$ = merge_list($1, $3); }
@@ -101,31 +128,29 @@ TERM: LIST { $$ = $1; }
   | COMP { $$ = $1; } 
   | atom { $$ = NULL; }
   | numeral { $$ = NULL; }
+  | variable { $$ = create_new_list($1); }
   ;
 
-ARITH: op ARITH cp
-  | OPERAND plus OPERAND
-  | OPERAND minus OPERAND
-  | OPERAND times OPERAND
-  | OPERAND divby OPERAND
+ARITH: OPERAND plus OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND minus OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND times OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND divby OPERAND { $$ = merge_list($1, $3); }
+  | op ARITH cp { $$ = $2; }
   ;
 
-COMP: op COMP cp
-  | OPERAND lt OPERAND
-  | OPERAND lte OPERAND
-  | OPERAND st OPERAND
-  | OPERAND ste OPERAND
-  | OPERAND eq OPERAND
-  | OPERAND eqeq OPERAND
-  | OPERAND neq OPERAND
-  | OPERAND neqeq OPERAND
+COMP: OPERAND lt OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND lte OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND st OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND ste OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND eq OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND eqeq OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND neq OPERAND { $$ = merge_list($1, $3); }
+  | OPERAND neqeq OPERAND { $$ = merge_list($1, $3); }
   ; 
 
-OPERAND: ARITH
-  | COMP
-  | variable
-  | numeral
-  | atom
+OPERAND: ARITH { $$ = $1; } 
+  | variable { $$ = create_new_list($1); }
+  | numeral { $$ = NULL; }
   ;
 
 LIST:	ob TERM_L vert LIST cb { $$ = merge_list($2, $4); }
@@ -142,10 +167,11 @@ FUNCTION: atom op TERM_L cp { $$ = $3; }
 %%
 
 int main(void) {	
-  yyparse(); return 0;
+  yyparse();
+  return 0;
 }
 
-void print_l(struct symbol *p) {
+void print_l(struct var_symbol *p) {
     printf("Recognized: ");
     while (p != NULL) {
       printf("%s", p->name);
@@ -155,7 +181,7 @@ void print_l(struct symbol *p) {
       }
     }
     printf("\n");
-  }
+}
 
 void yyerror(char *err) {
 	printf("%s",err);

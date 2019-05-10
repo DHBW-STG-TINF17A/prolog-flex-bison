@@ -18,11 +18,14 @@ numeral           {digit}+(\.{digit}+)?
 
 %%
 
+is                { return is; }
+
 {atom}            { return atom; }
-{variable}        { yylval = yytext; return variable; }
+{variable}        { yylval = strdup(yytext); return variable; }
 {numeral}         { return numeral; }
 
-[\t ]+            /* ignore whitespace */ ;
+%.*\n             /* ignore comments */
+[\t \n]+          /* ignore whitespace */
 
 \.                { return dot; }
 :-                { return def; }
@@ -49,6 +52,4 @@ numeral           {digit}+(\.{digit}+)?
 \*                { return times; }
 \/                { return divby; }
 
-
-\n                { return EOL; } 
 .                 { printf("Cannot interpret '%s'\n", yytext); }
