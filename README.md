@@ -1,5 +1,5 @@
-# Prolog Compiler
-Prolog Compiler for Compiler Construction Lab (Summer Term 2019)
+# Prolog Interpreter
+Prolog Interpreter for Compiler Construction Lab (Summer Term 2019)
 
 ## Build and run instructions
 1. Clone to your local device via `git clone` or download locally
