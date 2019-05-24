@@ -1,3 +1,5 @@
+start(A).
+start(B).
 %1
 a(X,Y) :- b(X,Z), c(Y,Z).
 %2

@@ -32,6 +32,7 @@
 
 	int main(void);
   void print_l(struct var_symbol *p);
+  char* concat(const char *s1, const char *s2);
   void yyerror(char*);
 	int yylex();
   void add_clause();
@@ -103,28 +104,28 @@ S_L: S_L S	{ ; }
 	| S	{ ; }
 	;
 
-S: FACT {/*print_l($1);*/ add_clause($1);  }
-	|	RULE { /*print_l($1);*/ add_clause($1); }
+S: FACT { add_clause($1); }
+	|	RULE {  add_clause($1); }
 	;
 
-FACT:	LITERAL dot { $$ = $1; }
+FACT:	LITERAL dot { asprintf(&$$,"%s %s",$1,$2);  }
 	;
 
 RULE:	LITERAL def LITERAL_L dot { asprintf(&$$,"%s %s %s %s",$1,$2,$3,$4); }
 	;
 
-LITERAL: atom op TERM_L cp {asprintf(&$$,"%s %s %s %s",$1,$2,$3,$4); add_literal($1); }
+LITERAL: atom op TERM_L cp {asprintf(&$$,"%s %s %s %s",$1,$2,$3,$4); add_literal($$); }
   | ARITH { $$ = $1; add_literal($1);}
   | COMP { $$ =$1; add_literal($1);}
 	| atom { $$=$1; add_literal($1); }
-  | variable is OPERAND { asprintf(&$$,"%s %s %s",$1,$2,$3); add_literal($1,$2,$3); }
+  | variable is OPERAND { asprintf(&$$,"%s %s %s",$1,$2,$3); add_literal($$); }
 	;
 
 LITERAL_L: LITERAL com LITERAL_L { asprintf(&$$,"%s %s %s",$1,$2,$3);  }
 	| LITERAL { $$ = $1; }
 	;
 
-TERM_L: TERM_L com TERM {  /*asprintf(&$$,"%s %s %s",$1,$2,$3);*/}
+TERM_L: TERM_L com TERM { asprintf(&$$,"%s %s %s",$1,$2,$3);}
 	| TERM { $$ = $1; }
 	;
 
@@ -178,14 +179,18 @@ int main(void) {
 }
 
 void add_clause(){
-  clause_t *old_clause = symbol_table;
-  symbol_table = (clause_t *) malloc(sizeof(clause_t));
-  symbol_table->next=old_clause;
+  if(symbol_table==NULL){
+    symbol_table = (clause_t *) malloc(sizeof(clause_t));
+  }else{ 
+    clause_t *old_clause = symbol_table;
+    symbol_table = (clause_t *) malloc(sizeof(clause_t));
+    symbol_table->next=old_clause;
+   }
 }
 
 void add_literal(char* text){
   //if(text==NULL){text="##";}  
-  if(symbol_table==NULL){ return;}
+  if(symbol_table==NULL){ symbol_table = (clause_t *) malloc(sizeof(clause_t)); }
   literal_t *old_literal = (literal_t *) symbol_table->next_literal; // save current literal list pointer
   literal_t *new_literal = (literal_t *) malloc(sizeof(literal_t)); // allocate new list element
   
@@ -200,29 +205,55 @@ void add_literal(char* text){
   new_literal->next_literal = (literal *) old_literal;*/
 }
 
+
+char* concat(const char *s1, const char *s2)
+{
+    char *result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
+    // in real code you would check for errors in malloc here
+    //strcpy(result, s1);
+    //strcat(result, s2);
+    strcpy(result, s2);
+    strcat(result, s1);
+    return result;
+}
+
 void print_symboltable(){
   printf("symbol table\n");
   int counter=1;
+  char *str="";
+  char *temp = malloc(500*sizeof(char));
+
   clause_t* current = symbol_table;
 
   while(current != NULL){
-    printf("%d clause: \n",counter);
+    //printf("%d clause: \n",counter);
+    
+    
 
     literal_t * current_literal = current->next_literal;
     while(current_literal != NULL){
 
       if(current_literal->text!=NULL){
-        printf("\tliteral %s\n",current_literal->text);
+        asprintf(&temp,"\tliteral %s\n",current_literal->text);
+        str=concat(str,temp);
+        //printf("\tliteral %s\n",current_literal->text);
       }else{
-        printf("\txx\n");
+        //printf("\txx\n");
+        //(&temp,"\txx\n");
+        str=concat(temp,"\txx\n");
       }
+
+      
 
       current_literal=current_literal->next_literal;
     }
 
+    str=concat(str,"clause: \n");
+
     current=current->next;
     counter++;
   }
+  printf("%s",str);
 }
 
 void print_l(struct var_symbol *p) {

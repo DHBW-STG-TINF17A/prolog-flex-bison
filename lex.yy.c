@@ -786,12 +786,12 @@ YY_RULE_SETUP
 case 8:
 YY_RULE_SETUP
 #line 28 "scanner.l"
-{ return def; }
+{ yylval.ch=":-"; return def; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
 #line 29 "scanner.l"
-{ return com; }
+{ yylval.ch=","; return com; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP

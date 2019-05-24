@@ -25,8 +25,8 @@ is                { yylval.ch="is"; return is; }
 [\t \n]+          /* ignore whitespace */
 
 \.                { return dot; }
-:-                { return def; }
-,                 { return com; }
+:-                { yylval.ch=":-"; return def; }
+,                 { yylval.ch=","; return com; }
 
 \(                { yylval.ch="("; return op; }
 \)                { yylval.ch=")";return cp; }
