@@ -1,13 +1,10 @@
 %{
+  #define _GNU_SOURCE
 	#include <stdio.h>
   #include <stdlib.h>
   #include <string.h>
-	#include "parser.tab.h"
+	#include "y.tab.h"
   #include <stdbool.h>
-
-  //typedef struct clause clause_t;
-  //typedef struct literal literal_t;
-  //typedef struct literal_symbol literal_symbol_t;
 
   typedef struct clause {
     char *name;
@@ -90,7 +87,6 @@ clause_t * symbol_table;
 %}
 
 %union {
-  struct var_symbol *smbl;
   char *ch;
 }
 
@@ -100,11 +96,6 @@ clause_t * symbol_table;
 %left <ch> lt lte st ste eq eqeq neq neqeq plus minus times divby
 
 %start S_L
-
-%debug
-%initial-action {
-  yydebug = 0;
-}
 
 %%
 
@@ -119,21 +110,21 @@ S: FACT {/*print_l($1);*/ add_clause($1);  }
 FACT:	LITERAL dot { $$ = $1; }
 	;
 
-RULE:	LITERAL def LITERAL_L dot {  }
+RULE:	LITERAL def LITERAL_L dot { asprintf(&$$,"%s %s %s %s",$1,$2,$3,$4); }
 	;
 
-LITERAL: atom op TERM_L cp { $$ = $3; add_literal($1); }
+LITERAL: atom op TERM_L cp {asprintf(&$$,"%s %s %s %s",$1,$2,$3,$4); add_literal($1); }
   | ARITH { $$ = $1; add_literal($1);}
   | COMP { $$ =$1; add_literal($1);}
-	| atom { $$ = NULL;add_literal($1); }
-  | variable is OPERAND { add_literal($1,$2,$3); }
+	| atom { $$=$1; add_literal($1); }
+  | variable is OPERAND { asprintf(&$$,"%s %s %s",$1,$2,$3); add_literal($1,$2,$3); }
 	;
 
-LITERAL_L: LITERAL com LITERAL_L {  }
+LITERAL_L: LITERAL com LITERAL_L { asprintf(&$$,"%s %s %s",$1,$2,$3);  }
 	| LITERAL { $$ = $1; }
 	;
 
-TERM_L: TERM_L com TERM {  }
+TERM_L: TERM_L com TERM {  /*asprintf(&$$,"%s %s %s",$1,$2,$3);*/}
 	| TERM { $$ = $1; }
 	;
 
@@ -141,41 +132,40 @@ TERM:   ARITH { $$ = $1; }
   | FUNCTION { $$ = $1; }
   | LIST { $$ = $1; }
   | COMP { $$ = $1; } 
-  | atom { $$ = NULL; }
-  | numeral { $$ = NULL; }
+  | atom { $$ = $1;}
+  | numeral { $$ = $1;}
 //  | variable { $$ = create_new_list($1); }
   ;
 
-ARITH: OPERAND plus OPERAND { $$ = $2; sprintf($$,"%s %s %s",$1,$2,$3);}
-  | OPERAND minus OPERAND { }
-  | OPERAND times OPERAND {  }
-  | OPERAND divby OPERAND {}
-  | op ARITH cp { $$ = $2; }
+ARITH: OPERAND plus OPERAND {asprintf(&$$,"%s %s %s",$1,$2,$3);}
+  | OPERAND minus OPERAND { asprintf(&$$,"%s %s %s",$1,$2,$3);}
+  | OPERAND times OPERAND { asprintf(&$$,"%s %s %s",$1,$2,$3);}
+  | OPERAND divby OPERAND {asprintf(&$$,"%s %s %s",$1,$2,$3);}
+  | op ARITH cp { asprintf(&$$,"%s %s %s",$1,$2,$3); }
   ;
 
-COMP: OPERAND lt OPERAND {  }
-  | OPERAND lte OPERAND {  }
-  | OPERAND st OPERAND {  }
-  | OPERAND ste OPERAND {  }
-  | OPERAND eq OPERAND {  }
-  | OPERAND eqeq OPERAND {  }
-  | OPERAND neq OPERAND {  }
-  | OPERAND neqeq OPERAND {  }
+COMP: OPERAND lt OPERAND {  asprintf(&$$,"%s %s %s",$1,$2,$3); }
+  | OPERAND lte OPERAND {  asprintf(&$$,"%s %s %s",$1,$2,$3); }
+  | OPERAND st OPERAND {  asprintf(&$$,"%s %s %s",$1,$2,$3); }
+  | OPERAND ste OPERAND {  asprintf(&$$,"%s %s %s",$1,$2,$3); }
+  | OPERAND eq OPERAND {  asprintf(&$$,"%s %s %s",$1,$2,$3);}
+  | OPERAND eqeq OPERAND {  asprintf(&$$,"%s %s %s",$1,$2,$3);}
+  | OPERAND neq OPERAND {  asprintf(&$$,"%s %s %s",$1,$2,$3);}
+  | OPERAND neqeq OPERAND {  asprintf(&$$,"%s %s %s",$1,$2,$3); }
   ; 
 
-OPERAND: ARITH {  } 
-  | variable { }
-  | numeral { }
+OPERAND: ARITH {$$=$1;} 
+  | variable { $$ = $1;}
+  | numeral { $$ = $1;}
   ;
 
-LIST:	ob TERM_L vert LIST cb { }
-	| ob TERM_L cb {  }
-	|	ob cb {  }
-	|	variable {  }
+LIST:	ob TERM_L vert LIST cb {  asprintf(&$$,"%s %s %s %s %s",$1,$2,$3,$4,$5);}
+	| ob TERM_L cb { asprintf(&$$,"%s %s %s",$1,$2,$3);  }
+	|	ob cb {  asprintf(&$$,"%s %s",$1,$2);  }
+	|	variable { $$ = $1;  }
   ;
 
-FUNCTION: atom op TERM_L cp {  }
-  ;
+FUNCTION: atom op TERM_L cp {  asprintf(&$$,"%s %s %s %s",$1,$2,$3,$4);  } ;
 
 
 
