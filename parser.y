@@ -222,18 +222,18 @@ void print_symboltable(){
     while(current_literal != NULL){
 
       if(current_literal->text!=NULL){
-        asprintf(&clause_tmp,"\t-%s\n",current_literal->text);
+        asprintf(&clause_tmp,"\t%s\n",current_literal->text);
         str=concat(str,clause_tmp);
         //printf("\tliteral %s\n",current_literal->text);
       }else{
         //printf("\txx\n");
         //(&temp,"\txx\n");
-        str=concat(str,"\txx\n");
+        //str=concat(str,"\txx\n");
       }
 
       symbol_t * current_symbol = current_literal->next_symbol;
       while(current_symbol != NULL){
-        asprintf(&clause_tmp,"\t\t -%s\n",current_symbol->text);
+        asprintf(&clause_tmp,"\t\t %s\n",current_symbol->text);
         str=concat(str,clause_tmp);
         current_symbol=current_symbol->next_symbol;
       }
