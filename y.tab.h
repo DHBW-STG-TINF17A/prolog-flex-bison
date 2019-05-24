@@ -77,7 +77,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 77 "parser.y" /* yacc.c:1909  */
+#line 92 "parser.y" /* yacc.c:1909  */
 
   struct var_symbol *smbl;
   char *ch;

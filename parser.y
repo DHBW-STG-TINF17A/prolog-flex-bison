@@ -3,25 +3,26 @@
   #include <stdlib.h>
   #include <string.h>
 	#include "parser.tab.h"
+  #include <stdbool.h>
 
-	int main(void);
-  void print_l(struct var_symbol *p);
-  void yyerror(char*);
-	int yylex();
+  //typedef struct clause clause_t;
+  //typedef struct literal literal_t;
+  //typedef struct literal_symbol literal_symbol_t;
 
-  struct clause_group {
+  typedef struct clause {
     char *name;
     int term_count;
-    struct clause_group *next;
-  };
+    struct literal *next_literal;
+    struct clause *next;
+  } clause_t;
 
-  struct clause_symbol {
-    struct literal_symbol *literal_list;
-    struct clause_symbol *next;
-  };
+  typedef struct literal {
+    char *text;
+    struct literal *next_literal;
+  } literal_t;
 
   struct literal_symbol {
-    char *name;
+    char * text;
     struct var_symbol *var_list;
     struct literal_symbol *next;
   };
@@ -30,6 +31,18 @@
     char *name;
     struct var_symbol *next;
   };
+
+
+	int main(void);
+  void print_l(struct var_symbol *p);
+  void yyerror(char*);
+	int yylex();
+  void add_clause();
+  void add_literal();
+  void print_symboltable();
+
+
+clause_t * symbol_table;
 
   struct var_symbol *create_new_list(char *str) {
     struct var_symbol *new = calloc(1, sizeof(struct var_symbol));
@@ -72,6 +85,8 @@
     return left;
   }
 
+
+
 %}
 
 %union {
@@ -80,9 +95,9 @@
 }
 
 %token <ch> atom variable numeral dot def com op cp ob cb vert is
-%type <smbl> FACT RULE TERM TERM_L OPERAND COMP ARITH LIST LITERAL LITERAL_L FUNCTION
+%type <ch> FACT RULE TERM TERM_L OPERAND COMP ARITH LIST LITERAL LITERAL_L FUNCTION
 
-%left lt lte st ste eq eqeq neq neqeq plus minus times divby
+%left <ch> lt lte st ste eq eqeq neq neqeq plus minus times divby
 
 %start S_L
 
@@ -97,28 +112,28 @@ S_L: S_L S	{ ; }
 	| S	{ ; }
 	;
 
-S: FACT { print_l($1); }
-	|	RULE { print_l($1); }
+S: FACT {/*print_l($1);*/ add_clause($1);  }
+	|	RULE { /*print_l($1);*/ add_clause($1); }
 	;
 
 FACT:	LITERAL dot { $$ = $1; }
 	;
 
-RULE:	LITERAL def LITERAL_L dot { $$ = merge_list($1, $3); }
+RULE:	LITERAL def LITERAL_L dot {  }
 	;
 
-LITERAL: atom op TERM_L cp { $$ = $3; }
-  | ARITH { $$ = $1; }
-  | COMP { $$ =$1; }
-	| atom { $$ = NULL; }
-  | variable is OPERAND { $$ = merge_list(create_new_list($1), $3); }
+LITERAL: atom op TERM_L cp { $$ = $3; add_literal($1); }
+  | ARITH { $$ = $1; add_literal($1);}
+  | COMP { $$ =$1; add_literal($1);}
+	| atom { $$ = NULL;add_literal($1); }
+  | variable is OPERAND { add_literal($1,$2,$3); }
 	;
 
-LITERAL_L: LITERAL com LITERAL_L { $$ = merge_list($1, $3); }
+LITERAL_L: LITERAL com LITERAL_L {  }
 	| LITERAL { $$ = $1; }
 	;
 
-TERM_L: TERM_L com TERM { $$ = merge_list($1, $3); }
+TERM_L: TERM_L com TERM {  }
 	| TERM { $$ = $1; }
 	;
 
@@ -131,35 +146,35 @@ TERM:   ARITH { $$ = $1; }
 //  | variable { $$ = create_new_list($1); }
   ;
 
-ARITH: OPERAND plus OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND minus OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND times OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND divby OPERAND { $$ = merge_list($1, $3); }
+ARITH: OPERAND plus OPERAND { $$ = $2; sprintf($$,"%s %s %s",$1,$2,$3);}
+  | OPERAND minus OPERAND { }
+  | OPERAND times OPERAND {  }
+  | OPERAND divby OPERAND {}
   | op ARITH cp { $$ = $2; }
   ;
 
-COMP: OPERAND lt OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND lte OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND st OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND ste OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND eq OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND eqeq OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND neq OPERAND { $$ = merge_list($1, $3); }
-  | OPERAND neqeq OPERAND { $$ = merge_list($1, $3); }
+COMP: OPERAND lt OPERAND {  }
+  | OPERAND lte OPERAND {  }
+  | OPERAND st OPERAND {  }
+  | OPERAND ste OPERAND {  }
+  | OPERAND eq OPERAND {  }
+  | OPERAND eqeq OPERAND {  }
+  | OPERAND neq OPERAND {  }
+  | OPERAND neqeq OPERAND {  }
   ; 
 
-OPERAND: ARITH { $$ = $1; } 
-  | variable { $$ = create_new_list($1); }
-  | numeral { $$ = NULL; }
+OPERAND: ARITH {  } 
+  | variable { }
+  | numeral { }
   ;
 
-LIST:	ob TERM_L vert LIST cb { $$ = merge_list($2, $4); }
-	| ob TERM_L cb { $$ = $2; }
-	|	ob cb { $$ = NULL; }
-	|	variable { $$ = create_new_list($1); }
+LIST:	ob TERM_L vert LIST cb { }
+	| ob TERM_L cb {  }
+	|	ob cb {  }
+	|	variable {  }
   ;
 
-FUNCTION: atom op TERM_L cp { $$ = $3; }
+FUNCTION: atom op TERM_L cp {  }
   ;
 
 
@@ -168,7 +183,56 @@ FUNCTION: atom op TERM_L cp { $$ = $3; }
 
 int main(void) {	
   yyparse();
+  print_symboltable();
   return 0;
+}
+
+void add_clause(){
+  clause_t *old_clause = symbol_table;
+  symbol_table = (clause_t *) malloc(sizeof(clause_t));
+  symbol_table->next=old_clause;
+}
+
+void add_literal(char* text){
+  //if(text==NULL){text="##";}  
+  if(symbol_table==NULL){ return;}
+  literal_t *old_literal = (literal_t *) symbol_table->next_literal; // save current literal list pointer
+  literal_t *new_literal = (literal_t *) malloc(sizeof(literal_t)); // allocate new list element
+  
+  new_literal->text = malloc(255 * sizeof(char));
+
+  if(text!=NULL){
+    strcpy(new_literal->text,text);
+  }
+  new_literal->next_literal =  old_literal;
+  symbol_table->next_literal = new_literal;
+ /* symbol_table->next_literal= (literal *)new_literal;
+  new_literal->next_literal = (literal *) old_literal;*/
+}
+
+void print_symboltable(){
+  printf("symbol table\n");
+  int counter=1;
+  clause_t* current = symbol_table;
+
+  while(current != NULL){
+    printf("%d clause: \n",counter);
+
+    literal_t * current_literal = current->next_literal;
+    while(current_literal != NULL){
+
+      if(current_literal->text!=NULL){
+        printf("\tliteral %s\n",current_literal->text);
+      }else{
+        printf("\txx\n");
+      }
+
+      current_literal=current_literal->next_literal;
+    }
+
+    current=current->next;
+    counter++;
+  }
 }
 
 void print_l(struct var_symbol *p) {
