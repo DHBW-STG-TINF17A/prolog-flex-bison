@@ -122,13 +122,13 @@ TERM_L: TERM_L com TERM { $$ = merge_list($1, $3); }
 	| TERM { $$ = $1; }
 	;
 
-TERM: LIST { $$ = $1; }
+TERM:   ARITH { $$ = $1; }
   | FUNCTION { $$ = $1; }
-  | ARITH { $$ = $1; }
+  | LIST { $$ = $1; }
   | COMP { $$ = $1; } 
   | atom { $$ = NULL; }
   | numeral { $$ = NULL; }
-  | variable { $$ = create_new_list($1); }
+//  | variable { $$ = create_new_list($1); }
   ;
 
 ARITH: OPERAND plus OPERAND { $$ = merge_list($1, $3); }
