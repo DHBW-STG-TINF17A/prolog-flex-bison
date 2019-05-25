@@ -32,7 +32,7 @@
   void add_literal();
   void add_symbol();
   void print_symboltable();
-
+  bool symbol_exists(char * symbol);
 
 clause_t * symbol_table;
 
@@ -70,7 +70,7 @@ LITERAL: atom op TERM_L cp {asprintf(&$$,"%s %s %s %s",$1,$2,$3,$4); add_literal
   | ARITH { $$ = $1; add_literal($1);}
   | COMP { $$ =$1; add_literal($1);}
 	| atom { $$=$1; add_literal($1); }
-  | variable is OPERAND { asprintf(&$$,"%s %s %s",$1,$2,$3); add_literal($$); }
+  | variable is OPERAND { add_symbol($1);  asprintf(&$$,"%s %s %s",$1,$2,$3); add_literal($$); }
 	;
 
 LITERAL_L: LITERAL com LITERAL_L { asprintf(&$$,"%s %s %s",$1,$2,$3);  }
@@ -141,7 +141,23 @@ void add_clause(){
    //}
 }
 
+bool symbol_exists(char * symbol){
+  if(symbol_table==NULL){return false;}
+  if(symbol_table->next_literal==NULL){return false;}
+
+  symbol_t *current_symbol = symbol_table->next_literal->next_symbol;
+  while(current_symbol != NULL){
+    if(strcmp(current_symbol->text,symbol)==0){
+      return true;
+    }
+    current_symbol=current_symbol->next_symbol;
+  }
+  return false;
+}
+
 void add_symbol(char* text){
+  if(symbol_exists(text)){return;}
+
   if(symbol_table->next_literal==NULL){ symbol_table->next_literal=(literal_t *) malloc(sizeof(literal_t));}
   //if(symbol_table==NULL){return;}
   //if(symbol_table->next_literal==NULL){return;}
@@ -254,7 +270,7 @@ void print_symboltable(){
   int len = strlen(str);
   str[len-8] = '\0';
 
-  
+
 
   printf("%s",str);
 }

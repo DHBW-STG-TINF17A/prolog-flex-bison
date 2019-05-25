@@ -97,7 +97,7 @@
   void add_literal();
   void add_symbol();
   void print_symboltable();
-
+  bool symbol_exists(char * symbol);
 
 clause_t * symbol_table;
 
@@ -1378,7 +1378,7 @@ yyreduce:
 
   case 12:
 #line 73 "parser.y" /* yacc.c:1646  */
-    { asprintf(&(yyval.ch),"%s %s %s",(yyvsp[-2].ch),(yyvsp[-1].ch),(yyvsp[0].ch)); add_literal((yyval.ch)); }
+    { add_symbol((yyvsp[-2].ch));  asprintf(&(yyval.ch),"%s %s %s",(yyvsp[-2].ch),(yyvsp[-1].ch),(yyvsp[0].ch)); add_literal((yyval.ch)); }
 #line 1383 "y.tab.c" /* yacc.c:1646  */
     break;
 
@@ -1818,7 +1818,23 @@ void add_clause(){
    //}
 }
 
+bool symbol_exists(char * symbol){
+  if(symbol_table==NULL){return false;}
+  if(symbol_table->next_literal==NULL){return false;}
+
+  symbol_t *current_symbol = symbol_table->next_literal->next_symbol;
+  while(current_symbol != NULL){
+    if(strcmp(current_symbol->text,symbol)==0){
+      return true;
+    }
+    current_symbol=current_symbol->next_symbol;
+  }
+  return false;
+}
+
 void add_symbol(char* text){
+  if(symbol_exists(text)){return;}
+
   if(symbol_table->next_literal==NULL){ symbol_table->next_literal=(literal_t *) malloc(sizeof(literal_t));}
   //if(symbol_table==NULL){return;}
   //if(symbol_table->next_literal==NULL){return;}
@@ -1930,6 +1946,8 @@ void print_symboltable(){
 
   int len = strlen(str);
   str[len-8] = '\0';
+
+
 
   printf("%s",str);
 }
