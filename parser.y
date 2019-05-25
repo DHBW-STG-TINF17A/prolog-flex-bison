@@ -172,11 +172,9 @@ void add_symbol(char* text){
   new_symbol->text = text;
   new_symbol->next_symbol=old_symbol;
   symbol_table->next_literal->next_symbol = new_symbol;
-  printf("add symbol to %p\n",symbol_table->next_literal);
 }
 
 void add_literal(char* text){
-  printf("create new literal ");
 
    if(symbol_table->next_literal!=NULL){
 
@@ -184,7 +182,6 @@ void add_literal(char* text){
     if(symbol_table->next_literal->text==NULL){
         symbol_table->next_literal->text = malloc(255 * sizeof(char));
         if(text!=NULL){strcpy(symbol_table->next_literal->text,text); }
-        printf("%p\n",symbol_table->next_literal);
         literal_t *new_literal = (literal_t *) malloc(sizeof(literal_t));
         new_literal->next_literal =  symbol_table->next_literal; 
         symbol_table->next_literal=new_literal;       
@@ -204,7 +201,6 @@ void add_literal(char* text){
     strcpy(new_literal->text,"error");
   }
   symbol_table->next_literal = new_literal;
-  printf("%p\n",symbol_table->next_literal);
  /* symbol_table->next_literal= (literal *)new_literal;
   new_literal->next_literal = (literal *) old_literal;*/
 }
@@ -268,7 +264,7 @@ void print_symboltable(){
   }
 
   int len = strlen(str);
-  str[len-8] = '\0';
+  str[len-9] = '\0';
 
 
 
