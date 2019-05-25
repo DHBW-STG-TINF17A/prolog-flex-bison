@@ -1874,16 +1874,15 @@ void add_literal(char* text){
 char* concat(const char *s1, const char *s2)
 {
     char *result = malloc(strlen(s1) + strlen(s2) + 1); // +1 for the null-terminator
-    // in real code you would check for errors in malloc here
     //strcpy(result, s1);
     //strcat(result, s2);
-    strcpy(result, s1);
-    strcat(result, s2);
+    strcpy(result, s2);
+    strcat(result, s1);
     return result;
 }
 
 void print_symboltable(){
-  printf("symbol table\n");
+  printf("symbol table\nclause:\n");
   int counter=1;
   char *str="";
   char *clause_tmp = malloc(500*sizeof(char));
@@ -1892,11 +1891,18 @@ void print_symboltable(){
 
   clause_t* current = symbol_table;
 
-  while(current != NULL){
+  while(current != NULL){    
     //printf("%d clause: \n",counter);       
 
     literal_t * current_literal = current->next_literal;
     while(current_literal != NULL){
+
+      symbol_t * current_symbol = current_literal->next_symbol;
+      while(current_symbol != NULL){
+        asprintf(&clause_tmp,"\t\t %s\n",current_symbol->text);
+        str=concat(str,clause_tmp);
+        current_symbol=current_symbol->next_symbol;
+      }
 
       if(current_literal->text!=NULL){
         asprintf(&clause_tmp,"\t%s\n",current_literal->text);
@@ -1908,12 +1914,6 @@ void print_symboltable(){
         //str=concat(str,"\txx\n");
       }
 
-      symbol_t * current_symbol = current_literal->next_symbol;
-      while(current_symbol != NULL){
-        asprintf(&clause_tmp,"\t\t %s\n",current_symbol->text);
-        str=concat(str,clause_tmp);
-        current_symbol=current_symbol->next_symbol;
-      }
       
 
       current_literal=current_literal->next_literal;
@@ -1922,10 +1922,15 @@ void print_symboltable(){
     if(current->next){
       str=concat(str,"clause: \n");
     }
+      
 
     current=current->next;
     counter++;
   }
+
+  int len = strlen(str);
+  str[len-8] = '\0';
+
   printf("%s",str);
 }
 
